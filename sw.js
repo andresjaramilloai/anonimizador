@@ -2,7 +2,7 @@
 // - Archivos de la página (HTML, JS, CSS, textos): red primero (siempre la última versión si hay internet), copia guardada si no hay.
 // - Lector de texto y de PDF (vendor/): copia guardada primero (son pesados y no cambian).
 // No guarda ni envía nada que el usuario cargue: solo copia archivos del propio sitio.
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const SHELL = `anon-shell-${VERSION}`;
 const VENDOR = 'anon-vendor-v1';
 const SHELL_FILES = ['./', 'index.html', 'manifest.webmanifest', 'version.json', 'css/app.css', 'js/app.js', 'js/i18n.js', 'js/rules.js', 'js/ocr.js', 'js/redact.js', 'js/pdfio.js', 'js/raf.js', 'js/version.js',

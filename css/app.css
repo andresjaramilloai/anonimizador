@@ -70,6 +70,7 @@ progress { width: min(420px, 80vw); height: 10px; }
 .side h2 { margin: 0; font-size: 17px; }
 .muted { color: var(--muted); font-size: 13px; }
 .list { display: flex; flex-direction: column; gap: 2px; overflow: auto; flex: 1; min-height: 80px; }
+.list + .spacer { flex: 0 0 0; } /* con lista, ella ocupa todo el espacio libre (antes se lo repartía con el espaciador) */
 .item { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
 .item:hover, .item.sel { background: color-mix(in srgb, var(--sel) 14%, transparent); }
 .item input { width: 18px; height: 18px; }

@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
-  "fecha": "2026-10-27",
-  "notas": "Primera versión web: imágenes, PDF irreversible, texto con etiquetas, devolver, lista propia. Todo se procesa en tu navegador."
+  "version": "0.1.1",
+  "fecha": "2026-10-29",
+  "notas": "La lista de resultados ocupa todo el alto disponible (antes quedaba a media altura)."
 }
