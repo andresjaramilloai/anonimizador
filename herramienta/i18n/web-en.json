@@ -65,5 +65,6 @@
 "Cargando los idiomas del lector (solo la primera vez)…": "Loading the reader's languages (first time only)…",
 "Preparando el lector de texto…": "Preparing the text reader…",
 "Volver a la página de inicio": "Back to the home page",
-"¿Volver al inicio? Se cierra lo que tienes abierto; no se guarda nada.": "Go back to the home page? What you have open will be closed; nothing is saved."
+"¿Volver al inicio? Se cierra lo que tienes abierto; no se guarda nada.": "Go back to the home page? What you have open will be closed; nothing is saved.",
+"En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: la herramienta no adivina nombres. Agrega los tuyos en Ajustes › Mi lista.": "In the example, “Constructora Andina Ltda” counts as a company on your list: the tool does not guess names. Add your own in Settings › My list."
 }

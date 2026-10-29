@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.2.1",
   "fecha": "2026-10-29",
-  "notas": "El logotipo «Anonimizador» vuelve a la página de inicio (pide confirmar si hay algo abierto). La herramienta ahora vive en /herramienta/."
+  "notas": "Botón «Probar con un ejemplo» en la pestaña Texto: el mismo ejemplo de la página de presentación, con su empresa en una lista de ejemplo que no se guarda."
 }

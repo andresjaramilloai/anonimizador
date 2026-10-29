@@ -55,15 +55,15 @@ export async function recognizeLines(canvas, { langs = 'spa+eng', progress = nul
   const { data } = await w.recognize(src, {}, { blocks: true });
   const toRect = (b) => ({ x: b.x0 / scale, y: b.y0 / scale, w: (b.x1 - b.x0) / scale, h: (b.y1 - b.y0) / scale });
   const lines = [];
-  for (const block of data.blocks || []) {
-    for (const para of block.paragraphs || []) {
-      for (const line of para.lines || []) {
-        const words = (line.words || []).filter((x) => x.text && x.text.trim()).map((x) => ({ text: x.text.trim(), rect: toRect(x.bbox), conf: x.confidence }));
-        if (!words.length) continue;
-        lines.push({ text: words.map((x) => x.text).join(' '), rect: toRect(line.bbox), words });
-      }
+  // `para` y `n`: el párrafo de cada renglón y su orden dentro de él (para unir datos partidos en dos renglones).
+  (data.blocks || []).forEach((block, bi) => (block.paragraphs || []).forEach((para, pi) => {
+    let n = 0;
+    for (const line of para.lines || []) {
+      const words = (line.words || []).filter((x) => x.text && x.text.trim()).map((x) => ({ text: x.text.trim(), rect: toRect(x.bbox), conf: x.confidence }));
+      if (!words.length) continue;
+      lines.push({ text: words.map((x) => x.text).join(' '), rect: toRect(line.bbox), words, para: `${bi}.${pi}`, n: n++ });
     }
-  }
+  }));
   lines.sort((a, b) => (Math.abs(a.rect.y + a.rect.h / 2 - (b.rect.y + b.rect.h / 2)) > Math.min(a.rect.h, b.rect.h) * 0.5 ? a.rect.y - b.rect.y : a.rect.x - b.rect.x));
   return lines;
 }

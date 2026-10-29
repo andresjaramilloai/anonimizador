@@ -9,7 +9,11 @@ export function rectOf(start, end, line) {
     pos = we + 1;                                   // el texto de la línea une las palabras con un espacio
     const a = Math.max(start, ws); const b = Math.min(end, we);
     if (b <= a) continue;
-    const fa = (a - ws) / Math.max(w.text.length, 1); const fb = (b - ws) / Math.max(w.text.length, 1);
+    // La parte de la palabra se calcula en proporción a sus letras; si lo que sobra a un lado es solo
+    // puntuación («45,» o «(604)»), se cubre la palabra entera para no dejar un trozo de cifra a la vista.
+    const soloSignos = (s) => /^[\p{P}\p{S}]*$/u.test(s);
+    const fa = soloSignos(w.text.slice(0, a - ws)) ? 0 : (a - ws) / Math.max(w.text.length, 1);
+    const fb = soloSignos(w.text.slice(b - ws)) ? 1 : (b - ws) / Math.max(w.text.length, 1);
     const part = { x0: w.rect.x + w.rect.w * fa, y0: w.rect.y, x1: w.rect.x + w.rect.w * fb, y1: w.rect.y + w.rect.h };
     box = box ? { x0: Math.min(box.x0, part.x0), y0: Math.min(box.y0, part.y0), x1: Math.max(box.x1, part.x1), y1: Math.max(box.y1, part.y1) } : part;
   }
@@ -17,18 +21,57 @@ export function rectOf(start, end, line) {
 }
 
 let nextId = 1;
-/** Hallazgos de las líneas leídas de una página. `text` solo vive en memoria; en pantalla se muestra `hint`. */
+/**
+ * Hallazgos de las líneas leídas de una página. `text` solo vive en memoria; en pantalla se muestra `hint`.
+ * Un dato partido en dos renglones del mismo párrafo (una cuenta que sigue abajo, «C.C.» al final de un
+ * renglón y el número al principio del otro) es UN hallazgo con dos cajas: `rect` y `more`.
+ */
 export function findingsFromLines(lines, settings, page = 0) {
   const out = [];
-  for (const line of lines) {
+  lines.forEach((line, li) => {
     for (const m of find(line.text, { ...settings, ocr: true })) {
       const rect = rectOf(m.start, m.end, line);
       if (!rect) continue;
       const text = line.text.slice(m.start, m.end);
-      out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, page, enabled: true, manual: false });
+      out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, page, enabled: true, manual: false, _l: li, _a: m.start, _b: m.end });
+    }
+  });
+
+  // Cada renglón unido al siguiente de su párrafo. Sirve lo que cruza el salto (se parte en dos cajas) y lo
+  // que queda entero en un renglón pero solo se reconoce con el otro (el número de una cédula cuyo «C.C.»
+  // quedó al final del renglón de arriba). Lo que ya se había encontrado no se repite.
+  const ocupa = (f, L, ini, fin) => (f._l === L && f._a < fin && f._b > ini) || (f._l2 === L && f._a2 < fin && f._b2 > ini);
+  const parrafos = new Map();
+  lines.forEach((line, li) => { if (line.para != null) { if (!parrafos.has(line.para)) parrafos.set(line.para, []); parrafos.get(line.para).push(li); } });
+  const reemplazados = new Set();
+  for (const grupo of parrafos.values()) {
+    grupo.sort((x, y) => lines[x].n - lines[y].n);
+    for (let i = 0; i + 1 < grupo.length; i++) {
+      const la = grupo[i]; const lb = grupo[i + 1]; const a = lines[la]; const b = lines[lb];
+      const corte = a.text.length; const unido = `${a.text} ${b.text}`;
+      for (const m of find(unido, { ...settings, ocr: true })) {
+        if (m.start < corte && m.end > corte + 1) {
+          const finB = m.end - corte - 1;
+          const rect = rectOf(m.start, corte, a); const otra = rectOf(0, finB, b);
+          if (!rect || !otra) continue;
+          // Lo que la pasada por renglón encontró DENTRO de este dato (p. ej. media tarjeta tomada como teléfono) sobra.
+          for (const f of out) if ((f._l === la && f._a >= m.start && f._b <= corte) || (f._l === lb && f._b <= finB)) reemplazados.add(f);
+          const text = unido.slice(m.start, m.end);
+          out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, more: [otra], page, enabled: true, manual: false, _l: la, _a: m.start, _b: corte, _l2: lb, _a2: 0, _b2: finB });
+          continue;
+        }
+        const enB = m.start > corte;
+        const L = enB ? lb : la; const linea = enB ? b : a;
+        const ini = enB ? m.start - corte - 1 : m.start; const fin = enB ? m.end - corte - 1 : m.end;
+        if (out.some((f) => !reemplazados.has(f) && ocupa(f, L, ini, fin))) continue;
+        const rect = rectOf(ini, fin, linea);
+        if (!rect) continue;
+        const text = linea.text.slice(ini, fin);
+        out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, page, enabled: true, manual: false, _l: L, _a: ini, _b: fin });
+      }
     }
   }
-  return out;
+  return out.filter((f) => !reemplazados.has(f)).map(({ _l, _a, _b, _l2, _a2, _b2, ...f }) => f);
 }
 
 export function manualFinding(rect, page) {
@@ -55,7 +98,7 @@ export function blackout(src, rects) {
   return c;
 }
 
-export const redactedCanvas = (src, findings) => blackout(src, findings.filter((f) => f.enabled).map((f) => f.rect));
+export const redactedCanvas = (src, findings) => blackout(src, findings.filter((f) => f.enabled).flatMap((f) => [f.rect, ...(f.more || [])]));
 
 /** Codifica solo píxeles: el navegador no copia EXIF, GPS ni nombres de cámara al volver a dibujar. */
 export function encode(canvas, type = 'image/png', quality = 0.92) {

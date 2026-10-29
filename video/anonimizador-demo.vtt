@@ -1,0 +1,28 @@
+WEBVTT
+
+00:00:00.003 --> 00:00:03.210
+Así se tapan los datos antes de subirlos a una IA. Ejemplo con datos inventados. Todo ocurre en el navegador.
+
+00:00:04.164 --> 00:00:05.717
+1. Cargue una imagen, un PDF o un texto
+
+00:00:05.717 --> 00:00:08.467
+1. Lee el texto aquí mismo, en su navegador
+
+00:00:08.467 --> 00:00:13.276
+2. Revise lo que encontró: está marcado en rojo
+
+00:00:13.276 --> 00:00:16.528
+2. Así queda: negro sólido, sin nada debajo
+
+00:00:16.528 --> 00:00:21.377
+3. Anonimice: sale una copia nueva
+
+00:00:21.377 --> 00:00:29.334
+4. En texto: etiquetas en lugar de datos
+
+00:00:29.334 --> 00:00:37.801
+5. La IA responde con etiquetas; «Devolver» pone los datos reales
+
+00:00:37.801 --> 00:00:44.667
+Reduce el riesgo; revise siempre antes de compartir. andresjaramilloai.github.io/anonimizador

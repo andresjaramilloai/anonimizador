@@ -54,7 +54,7 @@ const S = {
   kinds: new Set(store.get('kinds', [...AUTOMATIC, ...LISTED])),
   terms: store.get('terms', []),
   ph: new Placeholders(),
-  text: { input: '', findings: [], disabled: new Set() },
+  text: { input: '', findings: [], disabled: new Set(), sampleTerms: [] }, // sampleTerms: la «lista» del ejemplo, solo en memoria
   answer: '',
   newVersion: false,
   net: { requests: [], blocked: 0 },
@@ -263,12 +263,10 @@ function stageView() {
   const canvas = h('canvas', { role: 'img', 'aria-label': t('Vista previa de la página') });
   drawStage(canvas);
   const stage = h('div', { class: 'stage' }, canvas);
-  const layer = (f) => {
-    const r = f.rect;
-    return h('div', { class: `box${f.enabled ? '' : ' off'}${S.selected === f.id ? ' sel' : ''}`, 'aria-hidden': true,
-      style: `left:${(r.x / src.width) * 100}%;top:${(r.y / src.height) * 100}%;width:${(r.w / src.width) * 100}%;height:${(r.h / src.height) * 100}%` });
-  };
-  if (!S.after) S.findings.filter((f) => f.page === S.page).forEach((f) => stage.append(layer(f)));
+  const layer = (f, r) => h('div', { class: `box${f.enabled ? '' : ' off'}${S.selected === f.id ? ' sel' : ''}`, 'aria-hidden': true,
+    style: `left:${(r.x / src.width) * 100}%;top:${(r.y / src.height) * 100}%;width:${(r.w / src.width) * 100}%;height:${(r.h / src.height) * 100}%` });
+  const cajas = (f) => [f.rect, ...(f.more || [])];   // un dato partido en dos renglones tiene dos cajas
+  if (!S.after) S.findings.filter((f) => f.page === S.page).forEach((f) => cajas(f).forEach((r) => stage.append(layer(f, r))));
 
   // arrastrar sobre la imagen = tapar a mano
   let start = null; let temp = null;
@@ -286,7 +284,7 @@ function stageView() {
     start = null; if (temp) { temp.remove(); temp = null; }
     if (rect.w > 6 && rect.h > 6) { const f = manualFinding(rect, S.page); S.findings.push(f); S.selected = f.id; invalidateAfter(); render(); }
     else {
-      const hit = S.findings.filter((f) => f.page === S.page).find((f) => p.x >= f.rect.x && p.x <= f.rect.x + f.rect.w && p.y >= f.rect.y && p.y <= f.rect.y + f.rect.h);
+      const hit = S.findings.filter((f) => f.page === S.page).find((f) => cajas(f).some((r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h));
       if (hit) { S.selected = hit.id; render(); }
     }
   });
@@ -341,9 +339,14 @@ function resultView() {
 
 // ---------- vistas: texto y devolver ----------
 
+// El mismo ejemplo que muestra la página de presentación. La empresa solo se tapa si está en la lista
+// (la herramienta no adivina nombres), así que el ejemplo trae su propia lista, que no se guarda.
+const TEXT_SAMPLE = 'Resuma este correo para mi jefe. Cliente: Constructora Andina Ltda. Contacto: laura.mejia@andina.example.com, celular 300 123 4567. NIT 900.123.456-8.';
+const TEXT_SAMPLE_TERMS = [{ text: 'Constructora Andina Ltda', kind: 'company' }];
+
 function scanText() {
   const text = S.text.input.normalize('NFC');
-  const found = find(text, settings()).map((m) => {
+  const found = find(text, { ...settings(), terms: [...S.terms, ...S.text.sampleTerms] }).map((m) => {
     const original = text.slice(m.start, m.end);
     return { ...m, original, tag: S.ph.tag(m.kind, original), key: `${m.kind}|${Placeholders.normalize(original)}` };
   });
@@ -369,6 +372,7 @@ function updateTextPanes() {
         h('input', { type: 'checkbox', checked: f.enabled, 'aria-label': `${KIND_TITLE()[f.kind]}: ${f.original.slice(0, 2)}•••`, onchange: () => { if (f.enabled) S.text.disabled.add(f.key); else S.text.disabled.delete(f.key); updateTextPanes(); } }),
         h('span', { class: 'hint' }, `${f.original.slice(0, 2)}•••`), h('span', {}, '→'), h('span', { class: 'hint' }, f.tag), h('span', { class: 'spacer' }), h('span', { class: 'kind' }, KIND_TITLE()[f.kind])))));
   }
+  const sample = $('#text-sample'); if (sample) sample.hidden = S.text.sampleTerms.length === 0;
   const mem = $('#text-mem'); if (mem) mem.textContent = S.ph.size === 0 ? t('Las equivalencias solo viven en esta sesión.') : t('Recuerdo %@ equivalencias (solo en memoria).', S.ph.size);
   const forget = $('#text-forget'); if (forget) forget.disabled = S.ph.size === 0;
 }
@@ -379,10 +383,13 @@ function textView() {
     oninput: (e) => { S.text.input = e.target.value; clearTimeout(timer); timer = setTimeout(updateTextPanes, 120); } });
   ta.value = S.text.input;
   const left = h('div', { class: 'pane' }, h('div', { class: 'head' }, h('h2', {}, t('Texto original')), h('span', {}, h('button', { class: 'btn small', onclick: async () => { try { ta.value = await navigator.clipboard.readText(); S.text.input = ta.value; updateTextPanes(); } catch (e) { toast(t('No pude leer el portapapeles: pega con Ctrl+V (⌘V en Mac) estando en esta página.')); } } }, t('Pegar')), ' ',
-    h('button', { class: 'btn small', onclick: () => { ta.value = ''; S.text.input = ''; updateTextPanes(); } }, t('Borrar')))), ta);
+    h('button', { class: 'btn small', onclick: () => { S.text.sampleTerms = TEXT_SAMPLE_TERMS; ta.value = TEXT_SAMPLE; S.text.input = TEXT_SAMPLE; updateTextPanes(); } }, t('Probar con un ejemplo')), ' ',
+    h('button', { class: 'btn small', onclick: () => { ta.value = ''; S.text.input = ''; S.text.sampleTerms = []; updateTextPanes(); } }, t('Borrar')))), ta);
   const right = h('div', { class: 'pane' }, h('div', { class: 'head' }, h('h2', {}, t('Texto anonimizado')),
     h('button', { class: 'btn small primary', onclick: async () => { try { await navigator.clipboard.writeText(textOutput()); const n = S.text.findings.filter((f) => f.enabled).length; toast(n === 0 ? t('Texto copiado (no había nada que ocultar)') : t('Copiado: %@', hiddenMessage(n))); } catch (e) { toast(t('Este navegador no dejó copiar: selecciona el texto y cópialo a mano.')); } } }, t('Copiar resultado'))),
-  h('div', { class: 'out', id: 'text-out', 'aria-label': t('Texto anonimizado'), tabindex: 0 }), h('div', { id: 'text-tags' }),
+  h('div', { class: 'out', id: 'text-out', 'aria-label': t('Texto anonimizado'), tabindex: 0 }),
+  h('p', { class: 'muted', id: 'text-sample', hidden: true }, t('En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: la herramienta no adivina nombres. Agrega los tuyos en Ajustes › Mi lista.')),
+  h('div', { id: 'text-tags' }),
   h('div', { class: 'head' }, h('span', { class: 'muted', id: 'text-mem' }), h('button', { class: 'btn small', id: 'text-forget', onclick: () => { S.ph.forget(); S.text.disabled.clear(); updateTextPanes(); toast(t('Listo: se olvidaron todas las equivalencias')); } }, t('Olvidar todo'))));
   queueMicrotask(updateTextPanes);
   return h('div', { class: 'two' }, left, right);
