@@ -63,5 +63,7 @@
 "Procesé solo el primer archivo: esta versión trabaja con uno a la vez.": "I only processed the first file: this version works with one at a time.",
 "Preparando el lector de texto (solo la primera vez)…": "Preparing the text reader (first time only)…",
 "Cargando los idiomas del lector (solo la primera vez)…": "Loading the reader's languages (first time only)…",
-"Preparando el lector de texto…": "Preparing the text reader…"
+"Preparando el lector de texto…": "Preparing the text reader…",
+"Volver a la página de inicio": "Back to the home page",
+"¿Volver al inicio? Se cierra lo que tienes abierto; no se guarda nada.": "Go back to the home page? What you have open will be closed; nothing is saved."
 }

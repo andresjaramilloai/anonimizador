@@ -528,10 +528,16 @@ function prepareOffline(report) {
 
 // ---------- estructura y pintado ----------
 
+// ¿Hay algo que se perdería al salir? (todo vive en memoria: archivo cargado, texto escrito, respuesta pegada)
+const hayTrabajoAbierto = () => S.stage !== 'empty' || S.text.input.trim() !== '' || S.answer.trim() !== '';
+
 function header() {
   const tab = (id, label) => h('button', { role: 'tab', 'aria-selected': String(S.tab === id), onclick: () => { S.tab = id; render(); } }, label);
   return h('header', { class: 'top' },
-    h('div', { class: 'brand' }, h('img', { src: 'icons/icon-192.png', alt: '' }), 'Anonimizador'),
+    // El logotipo lleva a la página de inicio, que está una carpeta más arriba (../): la herramienta vive en /herramienta/.
+    h('a', { class: 'brand', href: '../', title: t('Volver a la página de inicio'),
+      onclick: (e) => { if (hayTrabajoAbierto() && !confirm(t('¿Volver al inicio? Se cierra lo que tienes abierto; no se guarda nada.'))) e.preventDefault(); } },
+      h('img', { src: 'icons/icon-192.png', alt: '' }), 'Anonimizador'),
     h('div', { class: 'tabs', role: 'tablist', 'aria-label': t('Qué quieres anonimizar') }, tab('files', t('Archivos')), tab('text', t('Texto')), tab('restore', t('Devolver'))),
     h('span', { class: 'spacer' }),
     h('button', { class: 'linkbtn', onclick: openVerify }, '🔒 ' + t('Verificar')),
