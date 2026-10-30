@@ -10,7 +10,6 @@
 "Creando la copia…": "Creating the copy…",
 "Este navegador no deja copiar la imagen: usa «Descargar».": "This browser does not allow copying the image: use \"Download\".",
 "Arrastra aquí una imagen o un PDF": "Drag an image or a PDF here",
-"La página busca correos, cédulas, NIT, teléfonos, claves y lo que tengas en tu lista, y lo tapa con negro en una copia nueva. El original no se toca.": "The page looks for emails, ID numbers, NIT, phone numbers, keys and whatever is on your list, and covers it in black in a new copy. The original is not touched.",
 "Tu archivo no sale de este navegador: no hay ningún servidor que lo reciba.": "Your file does not leave this browser: there is no server to receive it.",
 "Compruébalo": "Check it",
 "Descargar": "Download",
@@ -66,5 +65,8 @@
 "Preparando el lector de texto…": "Preparing the text reader…",
 "Volver a la página de inicio": "Back to the home page",
 "¿Volver al inicio? Se cierra lo que tienes abierto; no se guarda nada.": "Go back to the home page? What you have open will be closed; nothing is saved.",
-"En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: la herramienta no adivina nombres. Agrega los tuyos en Ajustes › Mi lista.": "In the example, “Constructora Andina Ltda” counts as a company on your list: the tool does not guess names. Add your own in Settings › My list."
+"Correos, teléfonos (incluidos celulares y fijos de Colombia), tarjetas, documentos (cédula, NIT, RUT, CPF, DNI y otros), cuentas bancarias, direcciones IP, claves y tokens, contraseñas escritas con «clave:» o «password:», nombres de personas (por lo que los rodea, como «la señora…», «Nombre:» o la firma, o por un nombre común seguido de apellido) y los términos de tu lista.": "E-mails, phone numbers (including Colombian mobiles and landlines), cards, ID documents (cédula, NIT, RUT, CPF, DNI and others), bank accounts, IP addresses, keys and tokens, passwords written after «password:» or «clave:», people's names (by what surrounds them, like «Mrs. …», «Name:» or a signature, or by a common first name followed by a surname) and the terms in your list.",
+"Empresas que no estén en tu lista, nombres de personas sin nada que los anuncie (como «Reunión con Juan»), contraseñas escritas con puntos, texto muy pequeño o borroso, y números de documento sueltos sin ninguna palabra que los acompañe (como «cédula» o «NIT»). Por eso siempre hay que revisar.": "Companies that are not in your list, people's names with nothing announcing them (like «Meeting with John»), passwords shown as dots, very small or blurry text, and loose document numbers without any word next to them (like «cédula» or «NIT»). That is why you should always review.",
+"La página busca correos, cédulas, NIT, teléfonos, claves, nombres de personas y lo que tengas en tu lista, y lo tapa con negro en una copia nueva. El original no se toca.": "The page looks for e-mails, ID numbers, NIT, phone numbers, keys, people's names and whatever is in your list, and covers it in black in a new copy. The original is not touched.",
+"En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: las empresas solo se tapan si están en ella. Agrega las tuyas en Ajustes › Mi lista.": "In the example, «Constructora Andina Ltda» counts as a company from your list: companies are only covered if they are in it. Add yours in Settings › My list."
 }

@@ -1,5 +1,6 @@
 // Hallazgos sobre una imagen y tapado con negro sólido (puerto de Image/Redaction.swift y ImageTools.swift).
 import { find, hint } from './rules.js';
+import { CONTEXTO } from './contexto-nombres.js';
 
 /** La caja que cubre `[start,end)` dentro de `line` (las palabras tocadas aportan solo la parte cubierta). */
 export function rectOf(start, end, line) {
@@ -21,10 +22,34 @@ export function rectOf(start, end, line) {
 }
 
 let nextId = 1;
+const R = CONTEXTO.renglones;
+const abajo = (r) => r.y + r.h;
+
+/** El renglón de encima de `lines[b]`: el más cercano por arriba que se le solapa en horizontal, a no más de
+ *  `R.hueco` alturas (la firma bajo «Atentamente,» puede estar lejos). -1 si no hay. */
+export function encima(lines, b) {
+  const B = lines[b].rect;
+  let mejor = -1;
+  lines.forEach((l, i) => {
+    const A = l.rect;
+    if (i === b || abajo(A) > B.y + R.encima * B.h || A.x >= B.x + B.w || B.x >= A.x + A.w) return;
+    if (mejor < 0 || abajo(A) > abajo(lines[mejor].rect)) mejor = i;
+  });
+  if (mejor < 0) return -1;
+  const A = lines[mejor].rect;
+  return B.y - abajo(A) <= R.hueco * Math.max(A.h, B.h) ? mejor : -1;
+}
+
+/** Mismo párrafo: el del lector si lo da (Tesseract); si no, cerca (hasta `R.parrafo` alturas) y con alturas parecidas. */
+export function mismoParrafo(a, b) {
+  if (a.para != null && b.para != null) return a.para === b.para;
+  const hA = a.rect.h; const hB = b.rect.h;
+  return b.rect.y - abajo(a.rect) <= R.parrafo * Math.max(hA, hB) && Math.min(hA, hB) >= R.alturas * Math.max(hA, hB);
+}
 /**
  * Hallazgos de las líneas leídas de una página. `text` solo vive en memoria; en pantalla se muestra `hint`.
- * Un dato partido en dos renglones del mismo párrafo (una cuenta que sigue abajo, «C.C.» al final de un
- * renglón y el número al principio del otro) es UN hallazgo con dos cajas: `rect` y `more`.
+ * Un dato partido en dos renglones del mismo párrafo (una cuenta que sigue abajo, un nombre que sigue en el
+ * renglón de abajo) es UN hallazgo con dos cajas: `rect` y `more`.
  */
 export function findingsFromLines(lines, settings, page = 0) {
   const out = [];
@@ -37,40 +62,40 @@ export function findingsFromLines(lines, settings, page = 0) {
     }
   });
 
-  // Cada renglón unido al siguiente de su párrafo. Sirve lo que cruza el salto (se parte en dos cajas) y lo
-  // que queda entero en un renglón pero solo se reconoce con el otro (el número de una cédula cuyo «C.C.»
-  // quedó al final del renglón de arriba). Lo que ya se había encontrado no se repite.
+  // Cada renglón unido al de encima (Spec/reglas.md §5): con un espacio si son del mismo párrafo y con un salto de
+  // renglón si no. Sirve lo que cruza el salto dentro de un párrafo (se parte en dos cajas) y lo que queda entero en
+  // un renglón pero solo se reconoce con el otro: el número de una cédula cuyo «C.C.» quedó arriba, el nombre debajo
+  // de «Atentamente,» o de «Nombre:». Lo que ya se había encontrado no se repite.
   const ocupa = (f, L, ini, fin) => (f._l === L && f._a < fin && f._b > ini) || (f._l2 === L && f._a2 < fin && f._b2 > ini);
-  const parrafos = new Map();
-  lines.forEach((line, li) => { if (line.para != null) { if (!parrafos.has(line.para)) parrafos.set(line.para, []); parrafos.get(line.para).push(li); } });
   const reemplazados = new Set();
-  for (const grupo of parrafos.values()) {
-    grupo.sort((x, y) => lines[x].n - lines[y].n);
-    for (let i = 0; i + 1 < grupo.length; i++) {
-      const la = grupo[i]; const lb = grupo[i + 1]; const a = lines[la]; const b = lines[lb];
-      const corte = a.text.length; const unido = `${a.text} ${b.text}`;
-      for (const m of find(unido, { ...settings, ocr: true })) {
-        if (m.start < corte && m.end > corte + 1) {
-          const finB = m.end - corte - 1;
-          const rect = rectOf(m.start, corte, a); const otra = rectOf(0, finB, b);
-          if (!rect || !otra) continue;
-          // Lo que la pasada por renglón encontró DENTRO de este dato (p. ej. media tarjeta tomada como teléfono) sobra.
-          for (const f of out) if ((f._l === la && f._a >= m.start && f._b <= corte) || (f._l === lb && f._b <= finB)) reemplazados.add(f);
-          const text = unido.slice(m.start, m.end);
-          out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, more: [otra], page, enabled: true, manual: false, _l: la, _a: m.start, _b: corte, _l2: lb, _a2: 0, _b2: finB });
-          continue;
-        }
-        const enB = m.start > corte;
-        const L = enB ? lb : la; const linea = enB ? b : a;
-        const ini = enB ? m.start - corte - 1 : m.start; const fin = enB ? m.end - corte - 1 : m.end;
-        if (out.some((f) => !reemplazados.has(f) && ocupa(f, L, ini, fin))) continue;
-        const rect = rectOf(ini, fin, linea);
-        if (!rect) continue;
-        const text = linea.text.slice(ini, fin);
-        out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, page, enabled: true, manual: false, _l: L, _a: ini, _b: fin });
+  lines.forEach((b, lb) => {
+    const la = encima(lines, lb);
+    if (la < 0) return;
+    const a = lines[la];
+    const mismo = mismoParrafo(a, b);
+    const corte = a.text.length; const unido = `${a.text}${mismo ? ' ' : '\n'}${b.text}`;
+    for (const m of find(unido, { ...settings, ocr: true })) {
+      if (mismo && m.start < corte && m.end > corte + 1) {
+        const finB = m.end - corte - 1;
+        const rect = rectOf(m.start, corte, a); const otra = rectOf(0, finB, b);
+        if (!rect || !otra) continue;
+        // Lo que la pasada por renglón encontró DENTRO de este dato (p. ej. media tarjeta tomada como teléfono) sobra.
+        for (const f of out) if ((f._l === la && f._a >= m.start && f._b <= corte) || (f._l === lb && f._b <= finB)) reemplazados.add(f);
+        const text = unido.slice(m.start, m.end);
+        out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, more: [otra], page, enabled: true, manual: false, _l: la, _a: m.start, _b: corte, _l2: lb, _a2: 0, _b2: finB });
+        continue;
       }
+      if (m.start < corte && m.end > corte) continue;               // toca el salto de renglón: no es de ninguno de los dos
+      const enB = m.start > corte;
+      const L = enB ? lb : la; const linea = enB ? b : a;
+      const ini = enB ? m.start - corte - 1 : m.start; const fin = enB ? m.end - corte - 1 : m.end;
+      if (out.some((f) => !reemplazados.has(f) && ocupa(f, L, ini, fin))) continue;
+      const rect = rectOf(ini, fin, linea);
+      if (!rect) continue;
+      const text = linea.text.slice(ini, fin);
+      out.push({ id: nextId++, kind: m.kind, text, hint: hint(text), rect, page, enabled: true, manual: false, _l: L, _a: ini, _b: fin });
     }
-  }
+  });
   return out.filter((f) => !reemplazados.has(f)).map(({ _l, _a, _b, _l2, _a2, _b2, ...f }) => f);
 }
 

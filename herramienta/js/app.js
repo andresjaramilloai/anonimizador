@@ -36,7 +36,7 @@ const store = {
 
 const KIND_TITLE = () => ({
   email: t('Correos'), phone: t('Teléfonos'), card: t('Tarjetas'), id: t('Documentos de identidad'), bank: t('Cuentas bancarias'), ip: t('Direcciones IP'),
-  token: t('Claves y tokens'), password: t('Contraseñas visibles'), company: t('Empresas (tu lista)'), person: t('Personas (tu lista)'), custom: t('Otros términos (tu lista)'),
+  token: t('Claves y tokens'), password: t('Contraseñas visibles'), company: t('Empresas (tu lista)'), person: t('Nombres de personas'), custom: t('Otros términos (tu lista)'),
 });
 const kindWord = (k) => (k === 'company' ? t('Empresa') : k === 'person' ? t('Persona') : t('Otro'));
 const hiddenMessage = (n) => (n === 1 ? t('Se ocultó 1 dato sensible') : t('Se ocultaron %@ datos sensibles', n));
@@ -232,7 +232,7 @@ function dropView() {
   const input = h('input', { type: 'file', accept: 'image/*,application/pdf,.pdf,.heic,.heif', class: 'sr', hidden: true, onchange: (e) => { openFile(e.target.files[0]); e.target.value = ''; } });
   return h('div', { class: 'drop', id: 'drop' },
     h('h1', {}, t('Arrastra aquí una imagen o un PDF')),
-    h('p', {}, t('La página busca correos, cédulas, NIT, teléfonos, claves y lo que tengas en tu lista, y lo tapa con negro en una copia nueva. El original no se toca.')),
+    h('p', {}, t('La página busca correos, cédulas, NIT, teléfonos, claves, nombres de personas y lo que tengas en tu lista, y lo tapa con negro en una copia nueva. El original no se toca.')),
     h('div', { class: 'row' },
       h('button', { class: 'btn primary big', onclick: () => input.click() }, t('Elegir archivo…')),
       h('button', { class: 'btn big', onclick: pasteImage }, t('Pegar imagen')),
@@ -340,7 +340,7 @@ function resultView() {
 // ---------- vistas: texto y devolver ----------
 
 // El mismo ejemplo que muestra la página de presentación. La empresa solo se tapa si está en la lista
-// (la herramienta no adivina nombres), así que el ejemplo trae su propia lista, que no se guarda.
+// (las empresas no se adivinan), así que el ejemplo trae su propia lista, que no se guarda.
 const TEXT_SAMPLE = 'Resuma este correo para mi jefe. Cliente: Constructora Andina Ltda. Contacto: laura.mejia@andina.example.com, celular 300 123 4567. NIT 900.123.456-8.';
 const TEXT_SAMPLE_TERMS = [{ text: 'Constructora Andina Ltda', kind: 'company' }];
 
@@ -388,7 +388,7 @@ function textView() {
   const right = h('div', { class: 'pane' }, h('div', { class: 'head' }, h('h2', {}, t('Texto anonimizado')),
     h('button', { class: 'btn small primary', onclick: async () => { try { await navigator.clipboard.writeText(textOutput()); const n = S.text.findings.filter((f) => f.enabled).length; toast(n === 0 ? t('Texto copiado (no había nada que ocultar)') : t('Copiado: %@', hiddenMessage(n))); } catch (e) { toast(t('Este navegador no dejó copiar: selecciona el texto y cópialo a mano.')); } } }, t('Copiar resultado'))),
   h('div', { class: 'out', id: 'text-out', 'aria-label': t('Texto anonimizado'), tabindex: 0 }),
-  h('p', { class: 'muted', id: 'text-sample', hidden: true }, t('En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: la herramienta no adivina nombres. Agrega los tuyos en Ajustes › Mi lista.')),
+  h('p', { class: 'muted', id: 'text-sample', hidden: true }, t('En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: las empresas solo se tapan si están en ella. Agrega las tuyas en Ajustes › Mi lista.')),
   h('div', { id: 'text-tags' }),
   h('div', { class: 'head' }, h('span', { class: 'muted', id: 'text-mem' }), h('button', { class: 'btn small', id: 'text-forget', onclick: () => { S.ph.forget(); S.text.disabled.clear(); updateTextPanes(); toast(t('Listo: se olvidaron todas las equivalencias')); } }, t('Olvidar todo'))));
   queueMicrotask(updateTextPanes);
@@ -453,8 +453,8 @@ function openSettings() {
 
 const HELP = () => [
   [t('Cómo se usa'), t('Arrastra una imagen o un PDF a la ventana, o pega un texto. La página marca lo sensible; quita la marca de lo que no debe taparse y pulsa «Anonimizar». Sale una copia nueva lista para descargar, arrastrar a la IA o copiar.')],
-  [t('Qué busca la página'), t('Correos, teléfonos (incluidos celulares y fijos de Colombia), tarjetas, documentos (cédula, NIT, RUT, CPF, DNI y otros), cuentas bancarias, direcciones IP, claves y tokens, contraseñas escritas con «clave:» o «password:», y los términos de tu lista.')],
-  [t('Qué NO detecta'), t('Nombres de personas o empresas que no estén en tu lista, contraseñas escritas con puntos, datos partidos en dos líneas, texto muy pequeño o borroso, y números de documento sueltos sin ninguna palabra que los acompañe (como «cédula» o «NIT»). Por eso siempre hay que revisar.')],
+  [t('Qué busca la página'), t('Correos, teléfonos (incluidos celulares y fijos de Colombia), tarjetas, documentos (cédula, NIT, RUT, CPF, DNI y otros), cuentas bancarias, direcciones IP, claves y tokens, contraseñas escritas con «clave:» o «password:», nombres de personas (por lo que los rodea, como «la señora…», «Nombre:» o la firma, o por un nombre común seguido de apellido) y los términos de tu lista.')],
+  [t('Qué NO detecta'), t('Empresas que no estén en tu lista, nombres de personas sin nada que los anuncie (como «Reunión con Juan»), contraseñas escritas con puntos, texto muy pequeño o borroso, y números de documento sueltos sin ninguna palabra que los acompañe (como «cédula» o «NIT»). Por eso siempre hay que revisar.')],
   [t('Tapar a mano'), t('Si ves algo que la página no marcó, arrastra el ratón (o el dedo) sobre la imagen para dibujar un recuadro: se tapa igual que lo demás.')],
   [t('PDF: qué cambia'), t('Cada página se convierte en imagen, se tapa y se arma un PDF nuevo. Así lo tapado no se puede recuperar ni copiar. A cambio, el PDF nuevo ya no se puede buscar ni seleccionar texto, y pesa más. Se borran autor, título y demás metadatos.')],
   [t('Texto pegado y marcadores'), t('Cada dato se cambia por una etiqueta como [CORREO 1] o [EMPRESA 1]. El mismo dato recibe siempre la misma etiqueta mientras la pestaña esté abierta. «Olvidar todo» borra esa memoria.')],

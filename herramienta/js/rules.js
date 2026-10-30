@@ -1,6 +1,7 @@
 // Reglas de detección — puerto a JavaScript de Spec/reglas.md (la implementación de referencia es Mac/Sources/Anonimizador/Core).
 // Sin dependencias: sirve igual en el navegador y en Node (así el corpus se prueba sin abrir un navegador).
 // Las posiciones son índices UTF-16, igual que NSRange en Mac.
+import { CONTEXTO } from './contexto-nombres.js';
 
 export const KINDS = ['email', 'phone', 'card', 'id', 'bank', 'ip', 'token', 'password', 'company', 'person', 'custom'];
 export const AUTOMATIC = ['email', 'phone', 'card', 'id', 'bank', 'ip', 'token', 'password'];
@@ -226,6 +227,104 @@ export function termMatches(text, terms) {
   return out;
 }
 
+// ---------- Nombres de personas por el contexto (Spec/reglas.md §8; patrones y listas en Spec/contexto-nombres.json) ----------
+
+const flags = (r) => (r.ci ? 'giu' : 'gu');
+const ANTES = CONTEXTO.antes.map((r) => ({ ...r, re: new RegExp(r.patron, flags(r)) }));
+const DESPUES = { ...CONTEXTO.despues, re: new RegExp(CONTEXTO.despues.patron, flags(CONTEXTO.despues)) };
+const NOMBRE = new RegExp(CONTEXTO.nombre, 'uy');
+const NOMBRE_FINAL = new RegExp(CONTEXTO.nombreFinal, 'u');
+const FINES = Object.fromEntries(Object.entries(CONTEXTO.fines).map(([k, v]) => [k, new RegExp(v, 'uy')]));
+const PILA = new RegExp(CONTEXTO.pila.patron, 'gu');
+const PILA_ANTES = new RegExp(CONTEXTO.pila.antes, 'u');
+const CONECTORES = new Set(CONTEXTO.conectores);
+const NO_NOMBRES = new Set(CONTEXTO.noNombres);
+const NOMBRES_DE_PILA = new Set(CONTEXTO.nombresDePila);
+const LUGARES = new Set(CONTEXTO.lugares);
+const SEPARAN = new Set(CONTEXTO.conectoresQueSeparan);
+const plegar = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Las palabras de `text[ini, fin)` (separadas por espacios) y qué son: n = nombre, c = conector, i = inicial («M.»), x = no es nombre. */
+function palabras(text, ini, fin) {
+  const out = [];
+  for (const m of text.slice(ini, fin).matchAll(/[^ \t]+/g)) {
+    const p = m[0]; const f = plegar(p);
+    const clase = CONECTORES.has(f) ? 'c' : /^\p{Lu}\.$/u.test(p) ? 'i' : NO_NOMBRES.has(f) ? 'x' : 'n';
+    out.push({ a: ini + m.index, b: ini + m.index + p.length, clase, f });
+  }
+  return out;
+}
+
+/** Los nombres de unas palabras: «y»/«e» delante de un nombre de pila separa dos personas («Laura y Pedro»); se recortan
+ *  los conectores de las puntas y cada nombre necesita `minimo` palabras de nombre. */
+function nombresDe(ps, minimo) {
+  const grupos = [[]];
+  ps.forEach((p, i) => {
+    const sig = ps[i + 1];
+    if (p.clase === 'c' && SEPARAN.has(p.f) && sig && sig.clase === 'n' && NOMBRES_DE_PILA.has(sig.f)) grupos.push([]);
+    else grupos[grupos.length - 1].push(p);
+  });
+  const out = [];
+  for (const g of grupos) {
+    while (g.length && g[0].clase === 'c') g.shift();
+    while (g.length && g[g.length - 1].clase === 'c') g.pop();
+    if (g.filter((p) => p.clase === 'n').length >= minimo) out.push({ start: g[0].a, end: g[g.length - 1].b });
+  }
+  return out;
+}
+
+/** Los nombres que empiezan en `desde`: se cortan en la primera palabra que no es nombre (si es la primera, no hay nombre).
+ *  Con `pila`, la segunda palabra tiene que ser de nombre («Laura Gómez» sí; «Santiago de Cali», no). `fin` mira lo que sigue. */
+function hacia_adelante(text, desde, minimo, fin, pila = false) {
+  NOMBRE.lastIndex = desde;
+  const m = NOMBRE.exec(text);
+  if (!m) return [];
+  let ps = palabras(text, desde, desde + m[0].length);
+  if (pila && (ps.length < 2 || ps[1].clase !== 'n')) return [];
+  const corte = ps.findIndex((p) => p.clase === 'x');
+  if (corte === 0) return [];
+  if (corte > 0) ps = ps.slice(0, corte);
+  const ns = nombresDe(ps, minimo);
+  if (!ns.length || !fin) return ns;
+  FINES[fin].lastIndex = ns[ns.length - 1].end;
+  return FINES[fin].test(text) ? ns : [];
+}
+
+/** Los nombres que terminan en `hasta`, en el mismo renglón: las palabras después de la última que no es nombre. Si un
+ *  conector va antes de un nombre de pila y antes de él no hay ninguno, el nombre empieza ahí («Inscripción de Valentina
+ *  Ruiz»: «Valentina Ruiz»; «María del Carmen Gómez» queda entero). */
+function hacia_atras(text, hasta, minimo) {
+  const ini = text.lastIndexOf('\n', hasta - 1) + 1;
+  const m = NOMBRE_FINAL.exec(text.slice(ini, hasta));
+  if (!m) return [];
+  const ps = palabras(text, ini + m.index, hasta);
+  let k = ps.length;
+  while (k > 0 && ps[k - 1].clase !== 'x') k--;
+  for (let j = ps.length - 2; j >= k; j--) {
+    if (ps[j].clase === 'c' && NOMBRES_DE_PILA.has(ps[j + 1].f) && !ps.slice(k, j).some((p) => NOMBRES_DE_PILA.has(p.f))) { k = j + 1; break; }
+  }
+  return nombresDe(ps.slice(k), minimo);
+}
+
+/** Nombres de personas que el texto anuncia («la señora …», «Nombre: …», «Hola …,», «… identificada con», una firma…)
+ *  y los que empiezan por un nombre de pila común seguido de apellido. */
+export function nombresPorContexto(text) {
+  const out = [];
+  for (const r of ANTES) {
+    for (const m of text.matchAll(r.re)) out.push(...hacia_adelante(text, m.index + m[0].length, r.minimo, r.fin));
+  }
+  for (const m of text.matchAll(DESPUES.re)) out.push(...hacia_atras(text, m.index, DESPUES.minimo));
+  // Un nombre de pila común con su apellido, salvo si la palabra de justo antes es de lugar o institución («Avenida Simón Bolívar»).
+  for (const m of text.matchAll(PILA)) {
+    if (!NOMBRES_DE_PILA.has(plegar(m[0]))) continue;
+    const ini = text.lastIndexOf('\n', m.index - 1) + 1;
+    const antes = PILA_ANTES.exec(text.slice(ini, m.index));
+    if (antes && LUGARES.has(plegar(antes[1]))) continue;
+    out.push(...hacia_adelante(text, m.index, CONTEXTO.pila.minimo, null, true));
+  }
+  return out;
+}
+
 /**
  * Todo lo sensible de `text`, sin solapes. Si dos candidatos se solapan gana el más largo; en empate, la regla que va antes.
  * `kinds`: conjunto de tipos a buscar (por defecto todos). `terms`: lista propia [{text, kind}].
@@ -244,6 +343,8 @@ export function find(text, { terms = [], kinds = null, ocr = false } = {}) {
     }
   });
   for (const m of termMatches(text, terms)) if (want(m.kind)) candidates.push({ ...m, order: RULES.length });
+  // Los nombres por el contexto van al final: ante un empate gana cualquier otra regla (también la lista).
+  if (want('person')) for (const n of nombresPorContexto(text)) candidates.push({ kind: 'person', ...n, order: RULES.length + 2 });
   candidates.sort((a, b) => (b.end - b.start) - (a.end - a.start) || a.order - b.order || a.start - b.start);
   const claimed = [];
   const out = [];

@@ -10,7 +10,6 @@
 "Creando la copia…": "Criando a cópia…",
 "Este navegador no deja copiar la imagen: usa «Descargar».": "Este navegador não permite copiar a imagem: use «Baixar».",
 "Arrastra aquí una imagen o un PDF": "Arraste uma imagem ou um PDF aqui",
-"La página busca correos, cédulas, NIT, teléfonos, claves y lo que tengas en tu lista, y lo tapa con negro en una copia nueva. El original no se toca.": "A página procura e-mails, cédulas, NIT, telefones, chaves e o que estiver na sua lista, e cobre de preto em uma cópia nova. O original não é tocado.",
 "Tu archivo no sale de este navegador: no hay ningún servidor que lo reciba.": "Seu arquivo não sai deste navegador: não há nenhum servidor para recebê-lo.",
 "Compruébalo": "Verifique",
 "Descargar": "Baixar",
@@ -66,5 +65,8 @@
 "Preparando el lector de texto…": "Preparando o leitor de texto…",
 "Volver a la página de inicio": "Voltar à página inicial",
 "¿Volver al inicio? Se cierra lo que tienes abierto; no se guarda nada.": "Voltar ao início? O que você tem aberto será fechado; nada é salvo.",
-"En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: la herramienta no adivina nombres. Agrega los tuyos en Ajustes › Mi lista.": "No exemplo, «Constructora Andina Ltda» conta como uma empresa da sua lista: a ferramenta não adivinha nomes. Adicione os seus em Ajustes › Minha lista."
+"Correos, teléfonos (incluidos celulares y fijos de Colombia), tarjetas, documentos (cédula, NIT, RUT, CPF, DNI y otros), cuentas bancarias, direcciones IP, claves y tokens, contraseñas escritas con «clave:» o «password:», nombres de personas (por lo que los rodea, como «la señora…», «Nombre:» o la firma, o por un nombre común seguido de apellido) y los términos de tu lista.": "E-mails, telefones (inclusive celulares e fixos da Colômbia), cartões, documentos (cédula, NIT, RUT, CPF, DNI e outros), contas bancárias, endereços IP, chaves e tokens, senhas escritas após «senha:» ou «password:», nomes de pessoas (pelo que os rodeia, como «a Sra. …», «Nome:» ou a assinatura, ou por um nome próprio comum seguido de sobrenome) e os termos da sua lista.",
+"Empresas que no estén en tu lista, nombres de personas sin nada que los anuncie (como «Reunión con Juan»), contraseñas escritas con puntos, texto muy pequeño o borroso, y números de documento sueltos sin ninguna palabra que los acompañe (como «cédula» o «NIT»). Por eso siempre hay que revisar.": "Empresas que não estão na sua lista, nomes de pessoas sem nada que os anuncie (como «Reunião com João»), senhas mostradas com pontos, texto muito pequeno ou borrado, e números de documento soltos sem nenhuma palavra junto (como «cédula» ou «NIT»). Por isso é preciso revisar sempre.",
+"La página busca correos, cédulas, NIT, teléfonos, claves, nombres de personas y lo que tengas en tu lista, y lo tapa con negro en una copia nueva. El original no se toca.": "A página procura e-mails, documentos, NIT, telefones, chaves, nomes de pessoas e o que estiver na sua lista, e cobre tudo de preto numa cópia nova. O original não é alterado.",
+"En el ejemplo, «Constructora Andina Ltda» cuenta como una empresa de tu lista: las empresas solo se tapan si están en ella. Agrega las tuyas en Ajustes › Mi lista.": "No exemplo, «Constructora Andina Ltda» conta como uma empresa da sua lista: empresas só são cobertas se estiverem nela. Adicione as suas em Ajustes › Minha lista."
 }

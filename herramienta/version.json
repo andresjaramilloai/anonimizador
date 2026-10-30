@@ -1,5 +1,5 @@
 {
-  "version": "0.2.1",
-  "fecha": "2026-10-29",
-  "notas": "Botón «Probar con un ejemplo» en la pestaña Texto: el mismo ejemplo de la página de presentación, con su empresa en una lista de ejemplo que no se guarda."
+  "version": "0.3.0",
+  "fecha": "2026-10-30",
+  "notas": "Nombres de personas: se tapan solos por lo que los rodea («la señora…», «Nombre:», «Hola…,», la firma bajo «Atentamente,», «… identificada con») o por un nombre común seguido de apellido, con la misma regla que la app de Mac. Cada renglón se une al de encima: un nombre partido en dos renglones o el que va debajo de «Atentamente,» también se tapa."
 }

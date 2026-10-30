@@ -2,10 +2,10 @@
 // - Archivos de la página (HTML, JS, CSS, textos): red primero (siempre la última versión si hay internet), copia guardada si no hay.
 // - Lector de texto y de PDF (vendor/): copia guardada primero (son pesados y no cambian).
 // No guarda ni envía nada que el usuario cargue: solo copia archivos del propio sitio.
-const VERSION = '0.2.1';
+const VERSION = '0.3.0';
 const SHELL = `anon-shell-${VERSION}`;
 const VENDOR = 'anon-vendor-v1';
-const SHELL_FILES = ['./', 'index.html', 'manifest.webmanifest', 'version.json', 'css/app.css', 'js/app.js', 'js/i18n.js', 'js/rules.js', 'js/ocr.js', 'js/redact.js', 'js/pdfio.js', 'js/raf.js', 'js/version.js',
+const SHELL_FILES = ['./', 'index.html', 'manifest.webmanifest', 'version.json', 'css/app.css', 'js/app.js', 'js/i18n.js', 'js/rules.js', 'js/contexto-nombres.js', 'js/ocr.js', 'js/redact.js', 'js/pdfio.js', 'js/raf.js', 'js/version.js',
   'i18n/mac-en.json', 'i18n/mac-pt-BR.json', 'i18n/web-en.json', 'i18n/web-pt-BR.json', 'icons/icon-192.png', 'icons/icon-512.png'];
 const VENDOR_FILES = ['vendor/tesseract/tesseract.min.js', 'vendor/tesseract/worker.min.js', 'vendor/pdfjs/pdf.min.js', 'vendor/pdfjs/pdf.worker.min.js'];
 const HEAVY_FILES = ['vendor/tesseract/tesseract-core-simd-lstm.wasm.js', 'vendor/tesseract/tesseract-core-lstm.wasm.js', 'vendor/tessdata/spa.traineddata.gz', 'vendor/tessdata/eng.traineddata.gz', 'vendor/tessdata/por.traineddata.gz'];
